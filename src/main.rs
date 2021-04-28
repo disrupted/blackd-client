@@ -4,26 +4,20 @@ pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Result<T> = std::result::Result<T, Error>;
 
 fn main() -> Result<()> {
-    let _result = read_stdin();
+    let _stdin = read_stdin();
     let _result = format();
     Ok(())
 }
 
-fn read_stdin() -> Result<()> {
-    let stdin = io::stdin();
-    let lines = stdin.lock().lines();
-    // call blackd
-
-    // TODO
-    if true == true {
-        for line in lines {
-            println!("{}", line?);
-        }
+fn read_stdin() -> io::Result<io::StdinLock<'static>> {
+    let stdin = Box::leak(Box::new(io::stdin()));
+    for line in stdin.lock().lines() {
+        println!("{}", line?);
     }
-    Ok(())
+    Ok(stdin.lock())
 }
 
-fn format() -> Result<()> {
+fn format() -> Result<String> {
     let client = reqwest::blocking::Client::new();
     let mut resp = client
         .post("http://localhost:45484")
@@ -36,5 +30,5 @@ fn format() -> Result<()> {
     resp.read_to_string(&mut body)?;
     println!("{}", body);
 
-    Ok(())
+    Ok(body)
 }
