@@ -22,10 +22,14 @@ fn read_stdin() -> Result<String> {
 fn format(stdin: String) -> Result<String> {
     let client = reqwest::blocking::Client::new();
     let reqbody: String = String::from(&stdin);
-    let mut resp = client.post("http://localhost:45484").body(reqbody).send()?;
+    let mut resp = client
+        .post("http://localhost:45484")
+        .header("X-Fast-Or-Safe", "fast")
+        .body(reqbody)
+        .send()?;
 
-    println!("res = {:?}", resp.status());
-    if resp.status() == 204 {
+    // println!("res = {:?}", resp.status());
+    if resp.status() != 200 {
         println!("{}", stdin);
         return Ok(stdin);
     }
