@@ -28,15 +28,18 @@ fn format(stdin: String) -> Result<String> {
         .body(reqbody)
         .send()?;
 
-    // println!("res = {:?}", resp.status());
-    if resp.status() != 200 {
+    // input is already well-formatted
+    if resp.status() == 204 {
         print!("{}", stdin);
         return Ok(stdin);
     }
 
     let mut body = String::new();
-    resp.read_to_string(&mut body)?;
-    print!("{}", body);
+    // input was reformatted by Black
+    if resp.status() == 200 {
+        resp.read_to_string(&mut body)?;
+        print!("{}", body);
+    }
 
     Ok(body)
 }
