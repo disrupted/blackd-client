@@ -30,13 +30,13 @@ fn format(stdin: String) -> Result<String> {
 
     // println!("res = {:?}", resp.status());
     if resp.status() != 200 {
-        println!("{}", stdin);
+        print!("{}", stdin);
         return Ok(stdin);
     }
 
     let mut body = String::new();
     resp.read_to_string(&mut body)?;
-    println!("{}", body);
+    print!("{}", body);
 
     Ok(body)
 }
