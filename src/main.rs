@@ -1,7 +1,4 @@
-use std::{
-    io,
-    io::{prelude::*, StdinLock},
-};
+use std::{io, io::prelude::*};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Result<T> = std::result::Result<T, Error>;
@@ -12,34 +9,24 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-// fn read_stdin() -> io::Result<io::StdinLock<'static>> {
-//     let stdin = Box::leak(Box::new(io::stdin()));
-//     // for line in stdin.lock().lines() {
-//     //     println!("{}", line?);
-//     // }
-//     Ok(stdin.lock())
-// }
-
 fn read_stdin() -> Result<String> {
     let mut buffer = String::new();
-    let stdin = io::stdin(); // We get `Stdin` here.
+    let stdin = io::stdin();
     {
-        let mut stdin_lock = stdin.lock(); // We get `StdinLock` here.
+        let mut stdin_lock = stdin.lock();
         stdin_lock.read_to_string(&mut buffer)?;
-    } // `StdinLock` is dropped here.
+    }
     Ok(buffer)
 }
 
 fn format(stdin: String) -> Result<String> {
-    // println!("{}", stdin);
     let client = reqwest::blocking::Client::new();
-    let mut resp = client
-        .post("http://localhost:45484")
-        .body("print('bli bla blub')")
-        .send()?;
+    let reqbody: String = String::from(&stdin);
+    let mut resp = client.post("http://localhost:45484").body(reqbody).send()?;
 
-    println!("res = {:?}", resp);
+    println!("res = {:?}", resp.status());
     if resp.status() == 204 {
+        println!("{}", stdin);
         return Ok(stdin);
     }
 
