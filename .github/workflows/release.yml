@@ -18,11 +18,11 @@ jobs:
         include:
           - name: linux
             os: ubuntu-latest
-            artifact_name: target/release/blackd-client
+            artifact_name: target/release/blackd-client_linux
             asset_name: blackd-client_linux
           - name: macos
             os: macos-latest
-            artifact_name: target/release/blackd-client
+            artifact_name: target/release/blackd-client_macos
             asset_name: blackd-client_macos
 
     steps:
