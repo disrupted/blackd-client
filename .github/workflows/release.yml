@@ -41,3 +41,11 @@ jobs:
         with:
           name: ${{ matrix.asset_name }}
           path: ${{ matrix.artifact_name }}
+
+      - name: Release artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            blackd-client_*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
