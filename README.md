@@ -28,9 +28,8 @@ brew install black
 
 2. Install blackd-client
 
-```sh
-# TODO: provide binary
-```
+- Download binary from https://github.com/disrupted/blackd-client/releases
+- Rename to `blackd-client` and put it somewhere on your `PATH`
 
 3. Start blackd daemon
 
@@ -68,11 +67,11 @@ Using `blackd-client`
 
 ```sh
 ❯ hyperfine 'cat subclean/core/parser.py | blackd-client -'
-  Time (mean ± σ):      32.2 ms ±   8.5 ms    [User: 6.5 ms, System: 7.2 ms]
-  Range (min … max):    22.9 ms …  70.5 ms    61 runs
+  Time (mean ± σ):      23.7 ms ±   3.7 ms    [User: 2.7 ms, System: 4.8 ms]
+  Range (min … max):    19.2 ms …  35.7 ms    84 runs
 ```
 
-**Result:** blackd is almost 10x faster! :rocket:
+**Result:** blackd is more than 10x faster! :rocket:
 
 ## Neovim integration using EFM language server
 
