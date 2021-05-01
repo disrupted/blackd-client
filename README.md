@@ -56,7 +56,7 @@ output is formatted using Black :sparkles:
 
 ## Benchmark comparison
 
-Normal `black --fast`:
+Normal `black --fast`
 
 ```sh
 ❯ hyperfine 'cat subclean/core/parser.py | black --fast -'
