@@ -19,27 +19,22 @@ fn read_stdin() -> Result<String> {
     Ok(buffer)
 }
 
-fn format(stdin: String) -> Result<String> {
-    let client = reqwest::blocking::Client::new();
-    let reqbody: String = String::from(&stdin);
-    let mut resp = client
-        .post("http://localhost:45484")
-        .header("X-Fast-Or-Safe", "fast")
-        .body(reqbody)
+fn format(stdin: String) -> Result<()> {
+    let resp = minreq::post("http://localhost:45484")
+        .with_header("X-Fast-Or-Safe", "fast")
+        .with_body(stdin.as_str())
         .send()?;
 
     // input is already well-formatted
-    if resp.status() == 204 {
+    if resp.status_code == 204 {
         print!("{}", stdin);
-        return Ok(stdin);
+        return Ok(());
     }
 
-    let mut body = String::new();
     // input was reformatted by Black
-    if resp.status() == 200 {
-        resp.read_to_string(&mut body)?;
-        print!("{}", body);
+    if resp.status_code == 200 {
+        print!("{}", resp.as_str()?);
     }
 
-    Ok(body)
+    Ok(())
 }
