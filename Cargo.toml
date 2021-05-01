@@ -1,6 +1,6 @@
 [package]
 name = "blackd-client"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["disrupted <hi@salomonpopp.me>"]
 edition = "2018"
 
