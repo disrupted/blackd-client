@@ -3,7 +3,9 @@ name: Release
 on:
   push:
     tags:
-      - "*"
+      - "v*.*.*"
+  pull_request:
+    branches: [main]
 
 jobs:
   release:
@@ -16,11 +18,11 @@ jobs:
         include:
           - name: linux
             os: ubuntu-latest
-            artifact_name: target/release/blackd-client
+            artifact_name: target/release/blackd-client_linux
             asset_name: blackd-client_linux
           - name: macos
             os: macos-latest
-            artifact_name: target/release/blackd-client
+            artifact_name: target/release/blackd-client_macos
             asset_name: blackd-client_macos
 
     steps:
@@ -34,7 +36,9 @@ jobs:
           toolchain: stable
 
       - name: Build
-        run: cargo build --release --locked
+        run: |
+          cargo build --release --locked
+          mv target/release/blackd-client ${{ matrix.artifact_name }}
 
       - name: Upload binaries to release
         uses: actions/upload-artifact@v2
@@ -42,10 +46,42 @@ jobs:
           name: ${{ matrix.asset_name }}
           path: ${{ matrix.artifact_name }}
 
-      - name: Release artifacts
+      - name: Set outputs
+        id: vars
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+      - name: Check outputs
+        run: echo ${{ steps.vars.outputs.sha_short }}
+
+      - name: Create tag
+        uses: actions/github-script@v4
+        if: startsWith(github.ref , 'refs/tags/') != true
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: "refs/tags/${{ steps.vars.outputs.sha_short }}",
+              sha: context.sha
+            })
+
+      - name: Release artifacts commit
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref , 'refs/tags/') != true
+        with:
+          files: ${{ matrix.artifact_name }}
+          draft: true
+          tag_name: ${{ steps.vars.outputs.sha_short }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release artifacts tag
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            blackd-client_*
+            target/release/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
