@@ -3,7 +3,7 @@ use std::{io, io::prelude::*};
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Result<T> = std::result::Result<T, Error>;
 
-fn main() -> () {
+fn main() {
     let stdin = read_stdin();
     let _result = format(stdin.unwrap());
 }
