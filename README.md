@@ -37,7 +37,7 @@ brew install black
 blackd
 ```
 
-or as service using Homebrew on macOS (preferred)
+or as a launchd service using Homebrew on macOS (preferred)
 
 ```sh
 sudo brew services start black
