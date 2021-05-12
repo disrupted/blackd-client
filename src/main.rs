@@ -25,11 +25,11 @@ fn format(url: &str, stdin: String) -> Result<String, minreq::Error> {
         .with_body(stdin.as_str())
         .send()?;
 
-    let _result = match resp.status_code {
-        204 => return Ok(stdin), // input is already well-formatted
-        200 => return Ok(resp.as_str()?.to_string()), // input was reformatted by Black
-        _ => return Err(minreq::Error::Other("Error")),
-    };
+    match resp.status_code {
+        204 => Ok(stdin),                      // input is already well-formatted
+        200 => Ok(resp.as_str()?.to_string()), // input was reformatted by Black
+        _ => Err(minreq::Error::Other("Error")),
+    }
 }
 
 #[cfg(test)]
