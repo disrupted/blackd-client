@@ -25,17 +25,11 @@ fn format(url: String, stdin: String) -> Result<String> {
         .with_body(stdin.as_str())
         .send()?;
 
-    let mut result = String::new();
-
-    // input is already well-formatted
-    if resp.status_code == 204 {
-        result = stdin;
-    }
-
-    // input was reformatted by Black
-    if resp.status_code == 200 {
-        result = resp.as_str()?.to_string();
-    }
+    let result = match resp.status_code {
+        204 => stdin,                      // input is already well-formatted
+        200 => resp.as_str()?.to_string(), // input was reformatted by Black
+        _ => "".to_string(),
+    };
 
     Ok(result)
 }
