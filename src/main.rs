@@ -1,8 +1,10 @@
 use std::{io, io::prelude::*};
 
+const BLACKD_DEFAULT_URL: &str = "http://localhost:45484";
+
 fn main() {
     let stdin = read_stdin();
-    let result = format("http://localhost:45484", stdin.unwrap());
+    let result = format(BLACKD_DEFAULT_URL, stdin.unwrap());
     match result {
         Ok(v) => print!("{}", v),
         Err(e) => print!("Error formatting with blackd-client: {}", e),
