@@ -25,13 +25,11 @@ fn format(url: &str, stdin: String) -> Result<String> {
         .with_body(stdin.as_str())
         .send()?;
 
-    let result = match resp.status_code {
-        204 => stdin,                      // input is already well-formatted
-        200 => resp.as_str()?.to_string(), // input was reformatted by Black
-        _ => "".to_string(),
+    match resp.status_code {
+        204 => return Ok(stdin), // input is already well-formatted
+        200 => return Ok(resp.as_str()?.to_string()), // input was reformatted by Black
+        _ => return Err("".into()),
     };
-
-    Ok(result)
 }
 
 #[cfg(test)]
@@ -53,7 +51,7 @@ mod tests {
         let result = format(server.url("").as_str(), "print('Hello World!')".to_string());
 
         mock.assert();
-        assert_eq!(result.is_ok(), true);
+        assert!(result.is_ok());
         assert_eq!(result.unwrap(), body);
     }
 
@@ -71,7 +69,21 @@ mod tests {
         let result = format(server.url("").as_str(), body.to_string());
 
         mock.assert();
-        assert_eq!(result.is_ok(), true);
+        assert!(result.is_ok());
         assert_eq!(result.unwrap(), body);
+    }
+
+    #[test]
+    fn test_format_error() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method("POST");
+            then.status(418);
+        });
+
+        let result = format(server.url("").as_str(), String::new());
+
+        mock.assert();
+        assert!(result.is_err());
     }
 }
