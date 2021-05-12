@@ -33,3 +33,27 @@ fn format(url: String, stdin: String) -> Result<String> {
 
     Ok(result)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use httpmock::MockServer;
+
+    #[test]
+    fn format_success_test() {
+        let server = MockServer::start();
+        let body = "print(\"Hello World!\")";
+        let mock = server.mock(|when, then| {
+            when.method("POST")
+                .path("/")
+                .header("X-Fast-Or-Safe", "fast");
+            then.status(200).body(body);
+        });
+
+        let result = format(server.url(""), "print('Hello World!')".to_string());
+
+        mock.assert();
+        assert_eq!(result.is_ok(), true);
+        assert_eq!(result.unwrap(), body);
+    }
+}
