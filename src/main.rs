@@ -6,7 +6,10 @@ pub type Result<T> = std::result::Result<T, Error>;
 fn main() {
     let stdin = read_stdin();
     let result = format("http://localhost:45484", stdin.unwrap());
-    print!("{}", result.unwrap());
+    match result {
+        Ok(v) => print!("{}", v),
+        Err(e) => print!("Error formatting with blackd-client: {}", e),
+    }
 }
 
 fn read_stdin() -> Result<String> {
