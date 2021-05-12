@@ -5,7 +5,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 fn main() {
     let stdin = read_stdin();
-    let result = format("http://localhost:45484".to_string(), stdin.unwrap());
+    let result = format("http://localhost:45484", stdin.unwrap());
     print!("{}", result.unwrap());
 }
 
@@ -19,7 +19,7 @@ fn read_stdin() -> Result<String> {
     Ok(buffer)
 }
 
-fn format(url: String, stdin: String) -> Result<String> {
+fn format(url: &str, stdin: String) -> Result<String> {
     let resp = minreq::post(url)
         .with_header("X-Fast-Or-Safe", "fast")
         .with_body(stdin.as_str())
@@ -50,7 +50,7 @@ mod tests {
             then.status(200).body(body);
         });
 
-        let result = format(server.url(""), "print('Hello World!')".to_string());
+        let result = format(server.url("").as_str(), "print('Hello World!')".to_string());
 
         mock.assert();
         assert_eq!(result.is_ok(), true);
