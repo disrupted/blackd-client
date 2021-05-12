@@ -43,12 +43,12 @@ jobs:
         name: [linux, macos]
 
         include:
-          - name: linux
+          - name: Linux
             os: ubuntu-latest
             sccache-path: /home/runner/.cache/sccache
             artifact_name: target/release/blackd-client_linux
             asset_name: blackd-client_linux
-          - name: macos
+          - name: macOS
             os: macos-latest
             sccache-path: /Users/runner/Library/Caches/Mozilla.sccache
             artifact_name: target/release/blackd-client_macos
