@@ -1,8 +1,5 @@
 use std::{io, io::prelude::*};
 
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
-pub type Result<T> = std::result::Result<T, Error>;
-
 fn main() {
     let stdin = read_stdin();
     let result = format("http://localhost:45484", stdin.unwrap());
@@ -12,7 +9,7 @@ fn main() {
     }
 }
 
-fn read_stdin() -> Result<String> {
+fn read_stdin() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let mut buffer = String::new();
     let stdin = io::stdin();
     {
@@ -22,16 +19,16 @@ fn read_stdin() -> Result<String> {
     Ok(buffer)
 }
 
-fn format(url: &str, stdin: String) -> Result<String> {
+fn format(url: &str, stdin: String) -> Result<String, minreq::Error> {
     let resp = minreq::post(url)
         .with_header("X-Fast-Or-Safe", "fast")
         .with_body(stdin.as_str())
         .send()?;
 
-    match resp.status_code {
+    let _result = match resp.status_code {
         204 => return Ok(stdin), // input is already well-formatted
         200 => return Ok(resp.as_str()?.to_string()), // input was reformatted by Black
-        _ => return Err("".into()),
+        _ => return Err(minreq::Error::Other("Error")),
     };
 }
 
