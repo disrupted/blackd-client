@@ -84,7 +84,7 @@ jobs:
           brew update
           brew install sccache
 
-      - uses: actions-rs/toolchain@v1
+      - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
           profile: minimal
