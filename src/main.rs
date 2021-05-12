@@ -5,7 +5,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 fn main() {
     let stdin = read_stdin();
-    let _result = format(stdin.unwrap());
+    let result = format("http://localhost:45484".to_string(), stdin.unwrap());
+    print!("{}", result.unwrap());
 }
 
 fn read_stdin() -> Result<String> {
@@ -18,22 +19,23 @@ fn read_stdin() -> Result<String> {
     Ok(buffer)
 }
 
-fn format(stdin: String) -> Result<()> {
-    let resp = minreq::post("http://localhost:45484")
+fn format(url: String, stdin: String) -> Result<String> {
+    let resp = minreq::post(url)
         .with_header("X-Fast-Or-Safe", "fast")
         .with_body(stdin.as_str())
         .send()?;
 
+    let mut result = String::new();
+
     // input is already well-formatted
     if resp.status_code == 204 {
-        print!("{}", stdin);
-        return Ok(());
+        result = stdin;
     }
 
     // input was reformatted by Black
     if resp.status_code == 200 {
-        print!("{}", resp.as_str()?);
+        result = resp.as_str()?.to_string();
     }
 
-    Ok(())
+    Ok(result)
 }
