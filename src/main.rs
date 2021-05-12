@@ -40,7 +40,7 @@ mod tests {
     use httpmock::MockServer;
 
     #[test]
-    fn format_success_test() {
+    fn test_format_success() {
         let server = MockServer::start();
         let body = "print(\"Hello World!\")";
         let mock = server.mock(|when, then| {
@@ -51,6 +51,24 @@ mod tests {
         });
 
         let result = format(server.url("").as_str(), "print('Hello World!')".to_string());
+
+        mock.assert();
+        assert_eq!(result.is_ok(), true);
+        assert_eq!(result.unwrap(), body);
+    }
+
+    #[test]
+    fn test_format_unchanged() {
+        let server = MockServer::start();
+        let body = "print(\"Already formatted\")";
+        let mock = server.mock(|when, then| {
+            when.method("POST")
+                .path("/")
+                .header("X-Fast-Or-Safe", "fast");
+            then.status(204);
+        });
+
+        let result = format(server.url("").as_str(), body.to_string());
 
         mock.assert();
         assert_eq!(result.is_ok(), true);
