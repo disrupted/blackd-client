@@ -7,6 +7,9 @@ on:
     tags: ["v*.*.*"]
   pull_request:
     branches: [main]
+  release:
+    types:
+      - created
 
 env:
   CARGO_TERM_COLOR: always
@@ -170,3 +173,25 @@ jobs:
           files: ${{ matrix.artifact_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish crate (dry-run)
+        run: cargo publish --dry-run
+
+  publish:
+    name: Publish
+    needs: [build]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2.3.4
+        with:
+          fetch-depth: 1
+
+      - name: Authenticate crates.io
+        run: cargo login
+
+      - name: Publish crate
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_PUBLISH_TOKEN }}

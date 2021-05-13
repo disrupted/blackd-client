@@ -3,6 +3,12 @@ name = "blackd-client"
 version = "0.0.2"
 authors = ["disrupted <hi@salomonpopp.me>"]
 edition = "2018"
+description = "Blazing fast Python code formatting using Black"
+readme = "README.md"
+repository = "https://github.com/disrupted/blackd-client"
+license = "GPL-3.0"
+keywords = ["cli", "python", "code-formatting", "black", "blackd"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 minreq = { version = "2.3.1" }
