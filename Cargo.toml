@@ -1,6 +1,6 @@
 [package]
 name = "blackd-client"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["disrupted <hi@salomonpopp.me>"]
 edition = "2018"
 description = "Blazing fast Python code formatting using Black"
