@@ -7,6 +7,9 @@ on:
     tags: ["v*.*.*"]
   pull_request:
     branches: [main]
+  release:
+    types:
+      - created
 
 env:
   CARGO_TERM_COLOR: always
@@ -170,3 +173,19 @@ jobs:
           files: ${{ matrix.artifact_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    name: Publish
+    needs: [build]
+    if: github.event_name == 'release' && github.event.action == 'created'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2.3.4
+        with:
+          fetch-depth: 1
+
+      - name: Publish crate
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_PUBLISH_TOKEN }}
