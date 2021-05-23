@@ -11,6 +11,13 @@ struct Opts {
     url: String,
 }
 
+custom_error! {BlackdError
+    Minreq{source: minreq::Error} = "{source}",
+    Syntax{details: String} = "Syntax Error: {details}",
+    Formatting{details: String} = "Formatting Error: {details}",
+    Unknown{status_code: i32, body: String} = "Unknown Error: {status_code}",
+}
+
 fn main() {
     let opts: Opts = Opts::parse();
     let stdin = read_stdin();
@@ -34,13 +41,6 @@ fn read_stdin() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     Ok(buffer)
 }
 
-custom_error! {BlackdError
-    MinreqError{source: minreq::Error} = "{source}",
-    SyntaxError{details: String} = "Syntax Error: {details}",
-    FormattingError{details: String} = "Formatting Error: {details}",
-    Unknown{status_code: i32, body: String} = "Unknown Error: {status_code}",
-}
-
 fn format(url: String, stdin: String) -> Result<String, BlackdError> {
     let resp = minreq::post(url)
         .with_header("X-Fast-Or-Safe", "fast")
@@ -52,8 +52,8 @@ fn format(url: String, stdin: String) -> Result<String, BlackdError> {
     match resp.status_code {
         204 => Ok(stdin), // input is already well-formatted
         200 => Ok(body),  // input was reformatted by Black
-        400 => Err(BlackdError::SyntaxError { details: body }),
-        500 => Err(BlackdError::FormattingError { details: body }),
+        400 => Err(BlackdError::Syntax { details: body }),
+        500 => Err(BlackdError::Formatting { details: body }),
         _ => Err(BlackdError::Unknown {
             status_code: resp.status_code,
             body,
