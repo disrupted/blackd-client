@@ -50,8 +50,8 @@ fn format(url: String, stdin: String) -> Result<String, BlackdError> {
 
     let body = resp.as_str()?.to_string();
     match resp.status_code {
-        204 => Ok(stdin), // input is already well-formatted
         200 => Ok(body),  // input was reformatted by Black
+        204 => Ok(stdin), // input is already well-formatted
         400 => Err(BlackdError::Syntax { details: body }),
         500 => Err(BlackdError::Formatting { details: body }),
         _ => Err(BlackdError::Unknown {
