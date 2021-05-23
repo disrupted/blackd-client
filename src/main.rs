@@ -24,6 +24,7 @@ fn read_stdin() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
 fn format(url: &str, stdin: String) -> Result<String, minreq::Error> {
     let resp = minreq::post(url)
         .with_header("X-Fast-Or-Safe", "fast")
+        .with_header("Content-Type", "text/plain; charset=utf-8")
         .with_body(stdin.as_str())
         .send()?;
 
