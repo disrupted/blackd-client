@@ -1,6 +1,6 @@
 [package]
 name = "blackd-client"
-version = "0.0.3"
+version = "0.0.4"
 authors = ["disrupted <hi@salomonpopp.me>"]
 edition = "2018"
 description = "Blazing fast Python code formatting using Black"
@@ -13,6 +13,7 @@ categories = ["command-line-utilities"]
 [dependencies]
 minreq = "2.3.1" 
 clap = "3.0.0-beta.2"
+custom_error = "1.9.2"
 
 [dev-dependencies]
 httpmock = "0.5.8"
