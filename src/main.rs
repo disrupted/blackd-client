@@ -39,6 +39,7 @@ fn format(url: &str, stdin: String) -> Result<String, minreq::Error> {
 mod tests {
     use super::*;
     use httpmock::MockServer;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_format_success() {
