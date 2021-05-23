@@ -104,7 +104,45 @@ mod tests {
     }
 
     #[test]
-    fn test_format_error() {
+    fn test_syntax_error() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method("POST");
+            then.status(400)
+                .body("Cannot parse: 1:6: print('bad syntax'))");
+        });
+
+        let result = format(server.url(""), "print('bad syntax'))".to_string());
+
+        mock.assert();
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Syntax Error: Cannot parse: 1:6: print('bad syntax'))"
+        );
+    }
+
+    #[test]
+    fn test_formatting_error() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method("POST");
+            then.status(500)
+                .body("('EOF in multi-line statement', (2, 0))");
+        });
+
+        let result = format(server.url(""), "print(('bad syntax')".to_string());
+
+        mock.assert();
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Formatting Error: ('EOF in multi-line statement', (2, 0))"
+        );
+    }
+
+    #[test]
+    fn test_unknown_error() {
         let server = MockServer::start();
         let mock = server.mock(|when, then| {
             when.method("POST");
@@ -115,5 +153,6 @@ mod tests {
 
         mock.assert();
         assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "Unknown Error: 418");
     }
 }
