@@ -4,13 +4,13 @@
 
 [Black](https://github.com/psf/black) is a brilliant, opinionated formatter for Python. However it can be quite slow when using an editor integration with format on save, since the process is cold-started every time you call it.
 
-Luckily there's [blackd](https://black.readthedocs.io/en/stable/blackd.html) which is a small HTTP server that keeps the Black process running in the background so that it can be called directly without the lenghty startup time.
+Luckily there's [blackd](https://black.readthedocs.io/en/stable/usage_and_configuration/black_as_a_server.html) which is a small HTTP server that keeps the Black process running in the background so that it can be called directly without the lenghty startup time.
 
 **blackd-client** is a simple helper that provides a single executable to communicate with Black, mainly for me to learn Rust.
 
 If you're using Black (or writing Python code in general) I recommend you to check it out!
 
-> this is very early stage and experimental. It's literally < 50 LOC I hacked together in one evening and I'll probably improve it as I learn more about Rust.
+> this is very early stage and experimental. It's literally < 50 LOC I hacked together in one evening, and I'll probably improve it as I learn more about Rust.
 
 ## Install
 
@@ -30,6 +30,12 @@ brew install black
 
 - Download binary from https://github.com/disrupted/blackd-client/releases
 - Rename to `blackd-client` and put it somewhere on your `PATH`
+
+Alternatively if you have Rust toolchain installed:
+
+```sh
+cargo install blackd-client
+```
 
 3. Start blackd daemon
 
