@@ -262,9 +262,10 @@ checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
 
 [[package]]
 name = "blackd-client"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "clap",
+ "custom_error",
  "httpmock",
  "minreq",
  "pretty_assertions",
@@ -435,6 +436,12 @@ dependencies = [
  "vcpkg",
  "winapi",
 ]
+
+[[package]]
+name = "custom_error"
+version = "1.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f8a51dd197fa6ba5b4dc98a990a43cc13693c23eb0089ebb0fcc1f04152bca6"
 
 [[package]]
 name = "diff"
