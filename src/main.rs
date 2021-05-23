@@ -16,7 +16,7 @@ custom_error! {BlackdError
     Minreq{source: minreq::Error} = "{source}",
     Syntax{details: String} = "Syntax Error: {details}",
     Formatting{details: String} = "Formatting Error: {details}",
-    Unknown{status_code: i32, body: String} = "Unknown Error: {status_code}",
+    Unknown{status_code: i32, body: String} = "Unknown Error {status_code}: {body}",
 }
 
 fn main() {
@@ -147,13 +147,16 @@ mod tests {
         let server = MockServer::start();
         let mock = server.mock(|when, then| {
             when.method("POST");
-            then.status(418);
+            then.status(418).body("message");
         });
 
         let result = format(server.url(""), String::new());
 
         mock.assert();
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err().to_string(), "Unknown Error: 418");
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Unknown Error 418: message"
+        );
     }
 }

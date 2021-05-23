@@ -52,7 +52,7 @@ sudo brew services start black
 pipe file contents to stdin, e.g.
 
 ```sh
-cat main.py | blackd-client -
+cat main.py | blackd-client
 ```
 
 output is formatted using Black :sparkles:
@@ -70,7 +70,7 @@ Normal `black --fast`
 Using `blackd-client`
 
 ```sh
-❯ hyperfine 'cat subclean/core/parser.py | blackd-client -'
+❯ hyperfine 'cat subclean/core/parser.py | blackd-client'
   Time (mean ± σ):      23.7 ms ±   3.7 ms    [User: 2.7 ms, System: 4.8 ms]
   Range (min … max):    19.2 ms …  35.7 ms    84 runs
 ```
