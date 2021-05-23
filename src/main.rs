@@ -1,4 +1,5 @@
 use clap::{crate_version, AppSettings, Clap};
+use custom_error::custom_error;
 use std::{io, io::prelude::*};
 
 /// Tiny HTTP client for the Black (blackd) Python code formatter
@@ -16,7 +17,10 @@ fn main() {
     let result = format(opts.url, stdin.unwrap());
     match result {
         Ok(v) => print!("{}", v),
-        Err(e) => print!("Error formatting with blackd-client: {}", e),
+        Err(e) => {
+            eprint!("Error formatting with blackd-client: {}", e);
+            std::process::exit(1);
+        }
     }
 }
 
@@ -30,17 +34,30 @@ fn read_stdin() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     Ok(buffer)
 }
 
-fn format(url: String, stdin: String) -> Result<String, minreq::Error> {
+custom_error! {BlackdError
+    MinreqError{source: minreq::Error} = "{source}",
+    SyntaxError{details: String} = "Syntax Error: {details}",
+    FormattingError{details: String} = "Formatting Error: {details}",
+    Unknown{status_code: i32, body: String} = "Unknown Error: {status_code}",
+}
+
+fn format(url: String, stdin: String) -> Result<String, BlackdError> {
     let resp = minreq::post(url)
         .with_header("X-Fast-Or-Safe", "fast")
         .with_header("Content-Type", "text/plain; charset=utf-8")
         .with_body(stdin.as_str())
         .send()?;
 
+    let body = resp.as_str()?.to_string();
     match resp.status_code {
-        204 => Ok(stdin),                      // input is already well-formatted
-        200 => Ok(resp.as_str()?.to_string()), // input was reformatted by Black
-        _ => Err(minreq::Error::Other("Error")),
+        204 => Ok(stdin), // input is already well-formatted
+        200 => Ok(body),  // input was reformatted by Black
+        400 => Err(BlackdError::SyntaxError { details: body }),
+        500 => Err(BlackdError::FormattingError { details: body }),
+        _ => Err(BlackdError::Unknown {
+            status_code: resp.status_code,
+            body,
+        }),
     }
 }
 
