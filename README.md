@@ -10,8 +10,6 @@ Luckily there's [blackd](https://black.readthedocs.io/en/stable/usage_and_config
 
 If you're using Black (or writing Python code in general) I recommend you to check it out!
 
-> this is very early stage and experimental. It's literally < 50 LOC I hacked together in one evening, and I'll probably improve it as I learn more about Rust.
-
 ## Install
 
 1. Install Black

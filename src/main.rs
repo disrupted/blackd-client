@@ -7,6 +7,7 @@ use std::{io, io::prelude::*};
 #[clap(version = crate_version!())]
 #[clap(setting = AppSettings::ColoredHelp)]
 struct Opts {
+    /// URL of blackd server
     #[clap(long, default_value = "http://localhost:45484")]
     url: String,
 }
