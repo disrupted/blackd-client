@@ -11,7 +11,8 @@ keywords = ["code-formatter", "cli", "black", "blackd", "python"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-minreq = { version = "2.3.1" }
+minreq = "2.3.1" 
+clap = "3.0.0-beta.2"
 
 [dev-dependencies]
 httpmock = "0.5.8"
