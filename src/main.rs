@@ -61,7 +61,7 @@ mod tests {
             then.status(200).body(body);
         });
 
-        let result = format(server.url("").as_str(), "print('Hello World!')".to_string());
+        let result = format(server.url(""), "print('Hello World!')".to_string());
 
         mock.assert();
         assert!(result.is_ok());
@@ -79,7 +79,7 @@ mod tests {
             then.status(204);
         });
 
-        let result = format(server.url("").as_str(), body.to_string());
+        let result = format(server.url(""), body.to_string());
 
         mock.assert();
         assert!(result.is_ok());
@@ -94,7 +94,7 @@ mod tests {
             then.status(418);
         });
 
-        let result = format(server.url("").as_str(), String::new());
+        let result = format(server.url(""), String::new());
 
         mock.assert();
         assert!(result.is_err());
