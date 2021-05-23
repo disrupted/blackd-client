@@ -1,10 +1,19 @@
+use clap::{crate_version, AppSettings, Clap};
 use std::{io, io::prelude::*};
 
-const BLACKD_DEFAULT_URL: &str = "http://localhost:45484";
+/// Tiny HTTP client for the Black (blackd) Python code formatter
+#[derive(Clap)]
+#[clap(version = crate_version!())]
+#[clap(setting = AppSettings::ColoredHelp)]
+struct Opts {
+    #[clap(long, default_value = "http://localhost:45484")]
+    url: String,
+}
 
 fn main() {
+    let opts: Opts = Opts::parse();
     let stdin = read_stdin();
-    let result = format(BLACKD_DEFAULT_URL, stdin.unwrap());
+    let result = format(opts.url, stdin.unwrap());
     match result {
         Ok(v) => print!("{}", v),
         Err(e) => print!("Error formatting with blackd-client: {}", e),
@@ -21,7 +30,7 @@ fn read_stdin() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     Ok(buffer)
 }
 
-fn format(url: &str, stdin: String) -> Result<String, minreq::Error> {
+fn format(url: String, stdin: String) -> Result<String, minreq::Error> {
     let resp = minreq::post(url)
         .with_header("X-Fast-Or-Safe", "fast")
         .with_header("Content-Type", "text/plain; charset=utf-8")
@@ -52,7 +61,7 @@ mod tests {
             then.status(200).body(body);
         });
 
-        let result = format(server.url("").as_str(), "print('Hello World!')".to_string());
+        let result = format(server.url(""), "print('Hello World!')".to_string());
 
         mock.assert();
         assert!(result.is_ok());
@@ -70,7 +79,7 @@ mod tests {
             then.status(204);
         });
 
-        let result = format(server.url("").as_str(), body.to_string());
+        let result = format(server.url(""), body.to_string());
 
         mock.assert();
         assert!(result.is_ok());
@@ -85,7 +94,7 @@ mod tests {
             then.status(418);
         });
 
-        let result = format(server.url("").as_str(), String::new());
+        let result = format(server.url(""), String::new());
 
         mock.assert();
         assert!(result.is_err());
