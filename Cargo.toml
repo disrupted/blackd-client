@@ -1,19 +1,19 @@
 [package]
 name = "blackd-client"
 version = "0.0.4"
-authors = ["disrupted <hi@salomonpopp.me>"]
+authors = [ "disrupted <hi@salomonpopp.me>" ]
+categories = [ "command-line-utilities" ]
 edition = "2018"
-description = "Blazing fast Python code formatting using Black"
+keywords = [ "code-formatter", "cli", "black", "blackd", "python" ]
+license = "GPL-3.0"
 readme = "README.md"
 repository = "https://github.com/disrupted/blackd-client"
-license = "GPL-3.0"
-keywords = ["code-formatter", "cli", "black", "blackd", "python"]
-categories = ["command-line-utilities"]
+description = "Blazing fast Python code formatting using Black"
 
 [dependencies]
-minreq = "2.3.1" 
 clap = "3.0.0-beta.2"
 custom_error = "1.9.2"
+minreq = "2.3.1"
 
 [dev-dependencies]
 httpmock = "0.5.8"
