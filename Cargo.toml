@@ -1,10 +1,10 @@
 [package]
 name = "blackd-client"
 version = "0.0.4"
-authors = [ "disrupted <hi@salomonpopp.me>" ]
-categories = [ "command-line-utilities" ]
+authors = ["disrupted <hi@salomonpopp.me>"]
+categories = ["command-line-utilities"]
 edition = "2018"
-keywords = [ "code-formatter", "cli", "black", "blackd", "python" ]
+keywords = ["code-formatter", "cli", "black", "blackd", "python"]
 license = "GPL-3.0"
 readme = "README.md"
 repository = "https://github.com/disrupted/blackd-client"
