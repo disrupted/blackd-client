@@ -22,7 +22,7 @@ custom_error! {BlackdError
 fn main() {
     let opts: Opts = Opts::parse();
     let stdin = read_stdin();
-    let result = format(&opts.url, &stdin.unwrap());
+    let result = format(&opts.url, &stdin.unwrap_or_default());
     match result {
         Ok(v) => print!("{}", v),
         Err(e) => {
