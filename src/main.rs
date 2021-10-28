@@ -22,7 +22,7 @@ custom_error! {BlackdError
 fn main() {
     let opts: Opts = Opts::parse();
     let stdin = read_stdin();
-    let result = format(opts.url, stdin.unwrap());
+    let result = format(&opts.url, &stdin.unwrap_or_default());
     match result {
         Ok(v) => print!("{}", v),
         Err(e) => {
@@ -42,17 +42,17 @@ fn read_stdin() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     Ok(buffer)
 }
 
-fn format(url: String, stdin: String) -> Result<String, BlackdError> {
+fn format(url: &str, stdin: &str) -> Result<String, BlackdError> {
     let resp = minreq::post(url)
         .with_header("X-Fast-Or-Safe", "fast")
         .with_header("Content-Type", "text/plain; charset=utf-8")
-        .with_body(stdin.as_str())
+        .with_body(stdin)
         .send()?;
 
     let body = resp.as_str()?.to_string();
     match resp.status_code {
-        200 => Ok(body),  // input was reformatted by Black
-        204 => Ok(stdin), // input is already well-formatted
+        200 => Ok(body),              // input was reformatted by Black
+        204 => Ok(stdin.to_string()), // input is already well-formatted
         400 => Err(BlackdError::Syntax { details: body }),
         500 => Err(BlackdError::Formatting { details: body }),
         _ => Err(BlackdError::Unknown {
@@ -79,7 +79,7 @@ mod tests {
             then.status(200).body(body);
         });
 
-        let result = format(server.url(""), "print('Hello World!')".to_string());
+        let result = format(&server.url(""), "print('Hello World!')");
 
         mock.assert();
         assert!(result.is_ok());
@@ -97,7 +97,7 @@ mod tests {
             then.status(204);
         });
 
-        let result = format(server.url(""), body.to_string());
+        let result = format(&server.url(""), body);
 
         mock.assert();
         assert!(result.is_ok());
@@ -113,7 +113,7 @@ mod tests {
                 .body("Cannot parse: 1:6: print('bad syntax'))");
         });
 
-        let result = format(server.url(""), "print('bad syntax'))".to_string());
+        let result = format(&server.url(""), "print('bad syntax'))");
 
         mock.assert();
         assert!(result.is_err());
@@ -132,7 +132,7 @@ mod tests {
                 .body("('EOF in multi-line statement', (2, 0))");
         });
 
-        let result = format(server.url(""), "print(('bad syntax')".to_string());
+        let result = format(&server.url(""), "print(('bad syntax')");
 
         mock.assert();
         assert!(result.is_err());
@@ -150,7 +150,7 @@ mod tests {
             then.status(418).body("message");
         });
 
-        let result = format(server.url(""), String::new());
+        let result = format(&server.url(""), "");
 
         mock.assert();
         assert!(result.is_err());
