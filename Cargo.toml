@@ -1,6 +1,6 @@
 [package]
 name = "blackd-client"
-version = "0.0.4"
+version = "0.0.5"
 authors = ["disrupted <hi@salomonpopp.me>"]
 categories = ["command-line-utilities"]
 edition = "2018"
