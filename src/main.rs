@@ -1,11 +1,10 @@
-use clap::{crate_version, AppSettings, Clap};
+use clap::{crate_version, Parser};
 use custom_error::custom_error;
 use std::{io, io::prelude::*};
 
 /// Tiny HTTP client for the Black (blackd) Python code formatter
-#[derive(Clap)]
+#[derive(Parser)]
 #[clap(version = crate_version!())]
-#[clap(setting = AppSettings::ColoredHelp)]
 struct Opts {
     /// URL of blackd server
     #[clap(long, default_value = "http://localhost:45484")]
