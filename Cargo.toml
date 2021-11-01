@@ -1,6 +1,6 @@
 [package]
 name = "blackd-client"
-version = "0.0.4"
+version = "0.0.5"
 authors = ["disrupted <hi@salomonpopp.me>"]
 categories = ["command-line-utilities"]
 edition = "2018"
@@ -11,7 +11,7 @@ repository = "https://github.com/disrupted/blackd-client"
 description = "Blazing fast Python code formatting using Black"
 
 [dependencies]
-clap = "3.0.0-beta.2"
+clap = "3.0.0-beta.5"
 custom_error = "1.9.2"
 minreq = "2.3.1"
 
