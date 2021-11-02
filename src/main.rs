@@ -37,7 +37,6 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
         url: pargs.opt_value_from_str("--url")?,
     };
 
-    // It's up to the caller what to do with the remaining arguments.
     let remaining = pargs.finish();
     if !remaining.is_empty() {
         eprintln!("Error: unrecognized arguments: {:?}", remaining);
