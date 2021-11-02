@@ -82,10 +82,6 @@ Using `blackd-client`
 Editor integration for Neovim can be done using a general purpose language server.
 There are two options to choose from:
 
-1. null-ls (what I use)
+1. [null-ls](https://github.com/disrupted/dotfiles/blob/master/.config/nvim/lua/conf/null-ls.lua) (what I use)
 
-[null-ls config](https://github.com/disrupted/dotfiles/blob/master/.config/nvim/lua/conf/null-ls.lua)
-
-2. EFM
-
-[EFM config](https://github.com/disrupted/dotfiles/blob/253dc440ed954a4289a72dad885c71c16d0f90a4/.config/nvim/lua/efm/blackd.lua)
+2. [EFM](https://github.com/disrupted/dotfiles/blob/253dc440ed954a4289a72dad885c71c16d0f90a4/.config/nvim/lua/efm/blackd.lua)
