@@ -1,10 +1,10 @@
-# blackd-client (WIP)
+# blackd-client
 
 > Tiny HTTP client for the Black (`blackd`) Python code formatter
 
 [Black](https://github.com/psf/black) is a brilliant, opinionated formatter for Python. However it can be quite slow when using an editor integration with format on save, since the process is cold-started every time you call it.
 
-Luckily there's [blackd](https://black.readthedocs.io/en/stable/usage_and_configuration/black_as_a_server.html) which is a small HTTP server that keeps the Black process running in the background so that it can be called directly without the lenghty startup time.
+Luckily there's [blackd](https://black.readthedocs.io/en/stable/usage_and_configuration/black_as_a_server.html), which is a small HTTP server that keeps the Black process running in the background so that it can be called directly without the lenghty startup time.
 
 **blackd-client** is a simple helper that provides a single executable to communicate with Black, mainly for me to learn Rust.
 
@@ -77,8 +77,15 @@ Using `blackd-client`
 
 **Result:** blackd is more than 10x faster! :rocket:
 
-## Neovim integration using EFM language server
+## Neovim integration
 
-[my configuration](https://github.com/disrupted/dotfiles/blob/master/.config/nvim/lua/efm/blackd.lua)
+Editor integration for Neovim can be done using a general purpose language server.
+There are two options to choose from:
 
-_TODO_ describe steps
+1. null-ls (what I use)
+
+[null-ls config](https://github.com/disrupted/dotfiles/blob/master/.config/nvim/lua/conf/null-ls.lua)
+
+2. EFM
+
+[EFM config](https://github.com/disrupted/dotfiles/blob/253dc440ed954a4289a72dad885c71c16d0f90a4/.config/nvim/lua/efm/blackd.lua)
