@@ -40,7 +40,8 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
     // It's up to the caller what to do with the remaining arguments.
     let remaining = pargs.finish();
     if !remaining.is_empty() {
-        eprintln!("Warning: unrecognized arguments: {:?}.", remaining);
+        eprintln!("Error: unrecognized arguments: {:?}", remaining);
+        std::process::exit(1);
     }
 
     Ok(args)
