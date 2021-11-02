@@ -23,12 +23,21 @@ fn main() {
     let stdin = read_stdin();
     let result = format(&opts.url, &stdin.unwrap_or_default());
     match result {
-        Ok(v) => print!("{}", v),
+        Ok(v) => {
+            write_stdout(v.as_bytes()).unwrap();
+        }
         Err(e) => {
             eprint!("Error formatting with blackd-client: {}", e);
             std::process::exit(1);
         }
     }
+}
+
+fn write_stdout(buf: &[u8]) -> io::Result<()> {
+    let stdout = io::stdout();
+    let mut writer = io::BufWriter::new(stdout.lock());
+    writer.write_all(buf)?;
+    Ok(())
 }
 
 fn read_stdin() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
