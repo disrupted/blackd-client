@@ -23,9 +23,7 @@ fn main() {
     let stdin = read_stdin();
     let result = format(&opts.url, &stdin.unwrap_or_default());
     match result {
-        Ok(v) => {
-            write_stdout(v.as_bytes()).unwrap();
-        }
+        Ok(v) => write_stdout(v.as_bytes()).unwrap(),
         Err(e) => {
             eprint!("Error formatting with blackd-client: {}", e);
             std::process::exit(1);
