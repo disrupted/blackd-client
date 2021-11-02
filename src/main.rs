@@ -1,14 +1,49 @@
-use clap::{crate_version, Parser};
 use custom_error::custom_error;
 use std::{io, io::prelude::*};
 
-/// Tiny HTTP client for the Black (blackd) Python code formatter
-#[derive(Parser)]
-#[clap(version = crate_version!())]
-struct Opts {
-    /// URL of blackd server
-    #[clap(long, default_value = "http://localhost:45484")]
-    url: String,
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+const DEFAULT_URL: &str = "http://localhost:45484";
+const HELP: &str = "\
+Tiny HTTP client for the Black (blackd) Python code formatter
+
+USAGE:
+    blackd-client [OPTIONS]
+
+OPTIONS:
+    -h, --help         Print help information
+        --url <URL>    URL of blackd server [default: http://localhost:45484]
+    -V, --version      Print version information
+";
+
+#[derive(Debug)]
+struct AppArgs {
+    url: Option<String>,
+}
+
+fn parse_args() -> Result<AppArgs, pico_args::Error> {
+    let mut pargs = pico_args::Arguments::from_env();
+
+    if pargs.contains(["-h", "--help"]) {
+        print!("{}", HELP);
+        std::process::exit(0);
+    }
+
+    if pargs.contains(["-V", "--version"]) {
+        println!("blackd-client v{}", VERSION);
+        std::process::exit(0);
+    }
+
+    let args = AppArgs {
+        url: pargs.opt_value_from_str("--url")?,
+    };
+
+    // It's up to the caller what to do with the remaining arguments.
+    let remaining = pargs.finish();
+    if !remaining.is_empty() {
+        eprintln!("Warning: unrecognized arguments: {:?}.", remaining);
+    }
+
+    Ok(args)
 }
 
 custom_error! {BlackdError
@@ -19,9 +54,19 @@ custom_error! {BlackdError
 }
 
 fn main() {
-    let opts: Opts = Opts::parse();
+    let args = match parse_args() {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("Error: {}.", e);
+            std::process::exit(1);
+        }
+    };
+
     let stdin = read_stdin();
-    let result = format(&opts.url, &stdin.unwrap_or_default());
+    let result = format(
+        &args.url.unwrap_or_else(|| DEFAULT_URL.to_string()),
+        &stdin.unwrap_or_default(),
+    );
     match result {
         Ok(v) => write_stdout(v.as_bytes()).unwrap(),
         Err(e) => {
