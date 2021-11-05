@@ -1,0 +1,8 @@
+pre-commit:
+  parallel: true
+  commands:
+    fmt:
+      glob: "*.rs"
+      run: cargo fmt -- --check {staged_files}
+    clippy:
+      run: cargo clippy -q -- -D warnings
