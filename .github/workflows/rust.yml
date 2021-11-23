@@ -95,7 +95,7 @@ jobs:
           override: true
 
       - name: Cache cargo registry
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         continue-on-error: false
         with:
           path: |
@@ -106,7 +106,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Save sccache
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v2.1.7
         continue-on-error: false
         with:
           path: ${{ matrix.sccache-path }}
