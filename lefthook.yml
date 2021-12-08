@@ -1,3 +1,9 @@
+fmt:
+  commands:
+    fmt:
+      glob: "*.rs"
+      run: cargo fmt -- --check {all_files}
+
 pre-commit:
   parallel: true
   commands:
