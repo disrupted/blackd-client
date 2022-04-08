@@ -130,7 +130,7 @@ jobs:
         run: sccache --stop-server || true
 
       - name: Upload binaries to release
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.asset_name }}
           path: ${{ matrix.artifact_name }}
