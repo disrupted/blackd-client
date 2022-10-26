@@ -4,6 +4,11 @@ fmt:
       glob: "*.rs"
       run: cargo fmt -- --check {all_files}
 
+clippy:
+  commands:
+    clippy:
+      run: cargo clippy -q --no-deps -- -D warnings
+
 pre-commit:
   parallel: true
   commands:
@@ -11,4 +16,4 @@ pre-commit:
       glob: "*.rs"
       run: cargo fmt -- --check {staged_files}
     clippy:
-      run: cargo clippy -q -- -D warnings
+      run: cargo clippy -q --no-deps -- -D warnings
