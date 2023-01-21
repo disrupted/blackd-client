@@ -3,6 +3,7 @@ use std::{io, io::prelude::*};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const DEFAULT_URL: &str = "http://localhost:45484";
+
 const HELP: &str = "\
 Tiny HTTP client for the Black (blackd) Python code formatter
 
@@ -10,14 +11,16 @@ USAGE:
     blackd-client [OPTIONS]
 
 OPTIONS:
-    -h, --help         Print help information
-        --url <URL>    URL of blackd server [default: http://localhost:45484]
-    -V, --version      Print version information
+    -h, --help              Print help information
+        --url <URL>         URL of blackd server [default: http://localhost:45484]
+        --line-length <LEN> Custom max-line-length.
+    -V, --version           Print version information
 ";
 
 #[derive(Debug)]
 struct AppArgs {
-    url: Option<String>,
+    url: String,
+    line_length: Option<i32>,
 }
 
 fn parse_args() -> Result<AppArgs, pico_args::Error> {
@@ -34,7 +37,10 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
     }
 
     let args = AppArgs {
-        url: pargs.opt_value_from_str("--url")?,
+        url: pargs
+            .opt_value_from_str("--url")?
+            .unwrap_or_else(|| DEFAULT_URL.to_string()),
+        line_length: pargs.opt_value_from_str("--line-length")?,
     };
 
     let remaining = pargs.finish();
@@ -63,10 +69,7 @@ fn main() {
     };
 
     let stdin = read_stdin();
-    let result = format(
-        &args.url.unwrap_or_else(|| DEFAULT_URL.to_string()),
-        &stdin.unwrap_or_default(),
-    );
+    let result = format(&args, &stdin.unwrap_or_default());
     match result {
         Ok(v) => write_stdout(v.as_bytes()).unwrap(),
         Err(e) => {
@@ -93,12 +96,17 @@ fn read_stdin() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     Ok(buffer)
 }
 
-fn format(url: &str, stdin: &str) -> Result<String, BlackdError> {
-    let resp = minreq::post(url)
+fn format(args: &AppArgs, stdin: &str) -> Result<String, BlackdError> {
+    let mut req = minreq::post(&args.url)
         .with_header("X-Fast-Or-Safe", "fast")
         .with_header("Content-Type", "text/plain; charset=utf-8")
-        .with_body(stdin)
-        .send()?;
+        .with_body(stdin);
+
+    if let Some(line_length) = &args.line_length {
+        req = req.with_header("X-Line-Length", line_length.to_string());
+    }
+
+    let resp = req.send()?;
 
     let body = resp.as_str()?.to_string();
     match resp.status_code {
@@ -130,7 +138,34 @@ mod tests {
             then.status(200).body(body);
         });
 
-        let result = format(&server.url(""), "print('Hello World!')");
+        let args = AppArgs {
+            url: server.url(""),
+            line_length: None,
+        };
+        let result = format(&args, "print('Hello World!')");
+
+        mock.assert();
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), body);
+    }
+
+    #[test]
+    fn test_format_line_length() {
+        let server = MockServer::start();
+        let body = "print(\"Hello World!\")";
+        let mock = server.mock(|when, then| {
+            when.method("POST")
+                .path("/")
+                .header("X-Fast-Or-Safe", "fast")
+                .header("X-Line-Length", "120");
+            then.status(200).body(body);
+        });
+
+        let args = AppArgs {
+            url: server.url(""),
+            line_length: Some(120),
+        };
+        let result = format(&args, "print('Hello World!')");
 
         mock.assert();
         assert!(result.is_ok());
@@ -148,7 +183,11 @@ mod tests {
             then.status(204);
         });
 
-        let result = format(&server.url(""), body);
+        let args = AppArgs {
+            url: server.url(""),
+            line_length: None,
+        };
+        let result = format(&args, body);
 
         mock.assert();
         assert!(result.is_ok());
@@ -164,7 +203,11 @@ mod tests {
                 .body("Cannot parse: 1:6: print('bad syntax'))");
         });
 
-        let result = format(&server.url(""), "print('bad syntax'))");
+        let args = AppArgs {
+            url: server.url(""),
+            line_length: None,
+        };
+        let result = format(&args, "print('bad syntax'))");
 
         mock.assert();
         assert!(result.is_err());
@@ -183,7 +226,11 @@ mod tests {
                 .body("('EOF in multi-line statement', (2, 0))");
         });
 
-        let result = format(&server.url(""), "print(('bad syntax')");
+        let args = AppArgs {
+            url: server.url(""),
+            line_length: None,
+        };
+        let result = format(&args, "print(('bad syntax')");
 
         mock.assert();
         assert!(result.is_err());
@@ -201,7 +248,11 @@ mod tests {
             then.status(418).body("message");
         });
 
-        let result = format(&server.url(""), "");
+        let args = AppArgs {
+            url: server.url(""),
+            line_length: None,
+        };
+        let result = format(&args, "");
 
         mock.assert();
         assert!(result.is_err());
