@@ -3,7 +3,7 @@ use std::{io, io::prelude::*};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const DEFAULT_URL: &str = "http://localhost:45484";
-const DEFAULT_LINE_LENGTH: i32 = 80;
+const DEFAULT_LINE_LENGTH: i32 = 88;
 
 const HELP: &str = "\
 Tiny HTTP client for the Black (blackd) Python code formatter
@@ -12,10 +12,10 @@ USAGE:
     blackd-client [OPTIONS]
 
 OPTIONS:
-    -h, --help         Print help information
-        --url <URL>    URL of blackd server [default: http://localhost:45484]
-        --length <LEN> Line length to pass to blackd. Defaults to 80.
-    -V, --version      Print version information
+    -h, --help              Print help information
+        --url <URL>         URL of blackd server [default: http://localhost:45484]
+        --line-length <LEN> Line length to pass to blackd. Defaults to 80.
+    -V, --version           Print version information
 ";
 
 #[derive(Debug)]
@@ -38,7 +38,7 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
     }
 
     let args = AppArgs {
-        line_length: pargs.opt_value_from_str("--length")?,
+        line_length: pargs.opt_value_from_str("--line-length")?,
         url: pargs.opt_value_from_str("--url")?,
     };
 
@@ -100,12 +100,16 @@ fn read_stdin() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
 }
 
 fn format(url: &str, line_length: &i32, stdin: &str) -> Result<String, BlackdError> {
-    let resp = minreq::post(url)
+    let mut req = minreq::post(url)
         .with_header("X-Fast-Or-Safe", "fast")
-        .with_header("X-Line-Length", line_length.to_string())
         .with_header("Content-Type", "text/plain; charset=utf-8")
-        .with_body(stdin)
-        .send()?;
+        .with_body(stdin);
+
+    if line_length != &DEFAULT_LINE_LENGTH {
+        req = req.with_header("X-Line-Length", line_length.to_string());
+    }
+
+    let resp = req.send()?;
 
     let body = resp.as_str()?.to_string();
     match resp.status_code {
