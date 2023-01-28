@@ -13,7 +13,7 @@ USAGE:
 OPTIONS:
     -h, --help              Print help information
         --url <URL>         URL of blackd server [default: http://localhost:45484]
-        --line-length <LEN> Custom max-line-length.
+        --line-length <LEN> Custom max-line-length
     -V, --version           Print version information
 ";
 
