@@ -20,7 +20,7 @@ USAGE:
 
 OPTIONS:
     -h, --help              Print help information
-        --url <URL>         URL of blackd server [default: http://localhost:45484]
+        --url <URL>         URL of blackd server [default: http://0.0.0.0:45484]
         --line-length <LEN> Custom max-line-length
     -V, --version           Print version information
 ";
@@ -51,7 +51,7 @@ impl AppArgs {
         let url = if let Some(url) = pargs.opt_value_from_str("--url").unwrap() {
             url
         } else {
-            "http://localhost:45484".to_string()
+            "http://0.0.0.0:45484".to_string()
         };
         let args = AppArgs {
             url: url,
