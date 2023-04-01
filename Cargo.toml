@@ -20,3 +20,4 @@ toml = "0.7.3"
 [dev-dependencies]
 httpmock = "0.5.8"
 pretty_assertions = "0.7.2"
+tempfile = "3.5.0"

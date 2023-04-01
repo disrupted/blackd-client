@@ -1,133 +1,17 @@
-use custom_error::custom_error;
-use serde::Deserialize;
-use std::env;
-use std::fs::{read_dir, File};
-use std::path::PathBuf;
-use std::{io, io::prelude::*};
-use toml;
+mod args;
+mod config;
+mod error;
+mod io_utils;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const DEFAULT_URL: &str = "http://localhost:45484";
-
-const HELP: &str = "\
-Tiny HTTP client for the Black (blackd) Python code formatter
-
-USAGE:
-    blackd-client [OPTIONS]
-
-OPTIONS:
-    -h, --help              Print help information
-        --url <URL>         URL of blackd server [default: http://localhost:45484]
-        --line-length <LEN> Custom max-line-length
-    -V, --version           Print version information
-";
-
-#[derive(Debug)]
-struct AppArgs {
-    url: String,
-    line_length: Option<i32>,
-}
-
-#[derive(Debug, Deserialize)]
-struct Config {
-    #[serde(rename = "tool")]
-    tool: Option<ToolConfig>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ToolConfig {
-    black: Option<BlackConfig>,
-}
-
-#[derive(Debug, Deserialize)]
-struct BlackConfig {
-    #[serde(rename = "line-length")]
-    line_length: Option<i32>,
-    #[serde(rename = "target-version")]
-    target_version: Option<Vec<String>>,
-}
-
-impl Config {
-    pub fn from_file(path: impl Into<PathBuf>) -> Result<Self, std::io::Error> {
-        let path = path.into();
-        let mut file = File::open(&path)?;
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)?;
-        let config = toml::from_str(&contents).unwrap();
-        Ok(config)
-    }
-}
-
-fn load_config() -> Option<Config> {
-    let mut path = env::current_dir().unwrap();
-    loop {
-        let dir = read_dir(&path).unwrap();
-        for entry in dir {
-            if let Ok(entry) = entry {
-                if let Some(ext) = entry.path().extension() {
-                    if ext == "toml" {
-                        return Some(
-                            Config::from_file(entry.path()).expect("Failed to load config file"),
-                        );
-                    }
-                }
-            }
-        }
-        if !path.pop() {
-            return None;
-        }
-    }
-}
-
-fn parse_args() -> Result<AppArgs, pico_args::Error> {
-    let mut pargs = pico_args::Arguments::from_env();
-
-    if pargs.contains(["-h", "--help"]) {
-        print!("{}", HELP);
-        std::process::exit(0);
-    }
-
-    if pargs.contains(["-V", "--version"]) {
-        println!("blackd-client v{}", VERSION);
-        std::process::exit(0);
-    }
-
-    let args = AppArgs {
-        url: pargs
-            .opt_value_from_str("--url")?
-            .unwrap_or_else(|| DEFAULT_URL.to_string()),
-        line_length: pargs.opt_value_from_str("--line-length")?,
-    };
-
-    let remaining = pargs.finish();
-    if !remaining.is_empty() {
-        eprintln!("Error: unrecognized arguments: {:?}", remaining);
-        std::process::exit(1);
-    }
-
-    Ok(args)
-}
-
-custom_error! {BlackdError
-    Minreq{source: minreq::Error} = "{source}",
-    Syntax{details: String} = "Syntax Error: {details}",
-    Formatting{details: String} = "Formatting Error: {details}",
-    Unknown{status_code: i32, body: String} = "Unknown Error {status_code}: {body}",
-}
+use args::AppArgs;
+use config::Config;
+use error::BlackdError;
+use io_utils::{read_stdin, write_stdout};
+use minreq;
 
 fn main() {
-    let config = match load_config() {
-        Some(config) => config,
-        None => Config { tool: None },
-    };
-
-    let args = match parse_args() {
-        Ok(v) => v,
-        Err(e) => {
-            eprintln!("Error: {}.", e);
-            std::process::exit(1);
-        }
-    };
+    let config = Config::load(None);
+    let args = AppArgs::parse();
 
     let stdin = read_stdin();
     let result = format(&config, &args, &stdin.unwrap_or_default());
@@ -138,23 +22,6 @@ fn main() {
             std::process::exit(1);
         }
     }
-}
-
-fn write_stdout(buf: &[u8]) -> io::Result<()> {
-    let stdout = io::stdout();
-    let mut writer = io::BufWriter::new(stdout.lock());
-    writer.write_all(buf)?;
-    Ok(())
-}
-
-fn read_stdin() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let mut buffer = String::new();
-    let stdin = io::stdin();
-    {
-        let mut stdin_lock = stdin.lock();
-        stdin_lock.read_to_string(&mut buffer)?;
-    }
-    Ok(buffer)
 }
 
 fn format(config: &Config, args: &AppArgs, stdin: &str) -> Result<String, BlackdError> {
@@ -175,6 +42,7 @@ fn format(config: &Config, args: &AppArgs, stdin: &str) -> Result<String, Blackd
         }
     }
 
+    // CLI args override config
     if let Some(line_length) = &args.line_length {
         req = req.with_header("X-Line-Length", line_length.to_string());
     }
@@ -211,11 +79,12 @@ mod tests {
             then.status(200).body(body);
         });
 
+        let config = Config { tool: None };
         let args = AppArgs {
             url: server.url(""),
             line_length: None,
         };
-        let result = format(&args, "print('Hello World!')");
+        let result = format(&config, &args, "print('Hello World!')");
 
         mock.assert();
         assert!(result.is_ok());
@@ -234,11 +103,12 @@ mod tests {
             then.status(200).body(body);
         });
 
+        let config = Config { tool: None };
         let args = AppArgs {
             url: server.url(""),
             line_length: Some(120),
         };
-        let result = format(&args, "print('Hello World!')");
+        let result = format(&config, &args, "print('Hello World!')");
 
         mock.assert();
         assert!(result.is_ok());
@@ -256,11 +126,12 @@ mod tests {
             then.status(204);
         });
 
+        let config = Config { tool: None };
         let args = AppArgs {
             url: server.url(""),
             line_length: None,
         };
-        let result = format(&args, body);
+        let result = format(&config, &args, body);
 
         mock.assert();
         assert!(result.is_ok());
@@ -276,11 +147,12 @@ mod tests {
                 .body("Cannot parse: 1:6: print('bad syntax'))");
         });
 
+        let config = Config { tool: None };
         let args = AppArgs {
             url: server.url(""),
             line_length: None,
         };
-        let result = format(&args, "print('bad syntax'))");
+        let result = format(&config, &args, "print('bad syntax'))");
 
         mock.assert();
         assert!(result.is_err());
@@ -299,11 +171,12 @@ mod tests {
                 .body("('EOF in multi-line statement', (2, 0))");
         });
 
+        let config = Config { tool: None };
         let args = AppArgs {
             url: server.url(""),
             line_length: None,
         };
-        let result = format(&args, "print(('bad syntax')");
+        let result = format(&config, &args, "print(('bad syntax')");
 
         mock.assert();
         assert!(result.is_err());
@@ -321,11 +194,12 @@ mod tests {
             then.status(418).body("message");
         });
 
+        let config = Config { tool: None };
         let args = AppArgs {
             url: server.url(""),
             line_length: None,
         };
-        let result = format(&args, "");
+        let result = format(&config, &args, "");
 
         mock.assert();
         assert!(result.is_err());
