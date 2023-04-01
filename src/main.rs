@@ -1,5 +1,10 @@
 use custom_error::custom_error;
+use serde::Deserialize;
+use std::env;
+use std::fs::{read_dir, File};
+use std::path::PathBuf;
 use std::{io, io::prelude::*};
+use toml;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const DEFAULT_URL: &str = "http://localhost:45484";
@@ -21,6 +26,57 @@ OPTIONS:
 struct AppArgs {
     url: String,
     line_length: Option<i32>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Config {
+    #[serde(rename = "tool")]
+    tool: Option<ToolConfig>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ToolConfig {
+    black: Option<BlackConfig>,
+}
+
+#[derive(Debug, Deserialize)]
+struct BlackConfig {
+    #[serde(rename = "line-length")]
+    line_length: Option<i32>,
+    #[serde(rename = "target-version")]
+    target_version: Option<Vec<String>>,
+}
+
+impl Config {
+    pub fn from_file(path: impl Into<PathBuf>) -> Result<Self, std::io::Error> {
+        let path = path.into();
+        let mut file = File::open(&path)?;
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)?;
+        let config = toml::from_str(&contents).unwrap();
+        Ok(config)
+    }
+}
+
+fn load_config() -> Option<Config> {
+    let mut path = env::current_dir().unwrap();
+    loop {
+        let dir = read_dir(&path).unwrap();
+        for entry in dir {
+            if let Ok(entry) = entry {
+                if let Some(ext) = entry.path().extension() {
+                    if ext == "toml" {
+                        return Some(
+                            Config::from_file(entry.path()).expect("Failed to load config file"),
+                        );
+                    }
+                }
+            }
+        }
+        if !path.pop() {
+            return None;
+        }
+    }
 }
 
 fn parse_args() -> Result<AppArgs, pico_args::Error> {
@@ -60,6 +116,11 @@ custom_error! {BlackdError
 }
 
 fn main() {
+    let config = match load_config() {
+        Some(config) => config,
+        None => Config { tool: None },
+    };
+
     let args = match parse_args() {
         Ok(v) => v,
         Err(e) => {
@@ -69,7 +130,7 @@ fn main() {
     };
 
     let stdin = read_stdin();
-    let result = format(&args, &stdin.unwrap_or_default());
+    let result = format(&config, &args, &stdin.unwrap_or_default());
     match result {
         Ok(v) => write_stdout(v.as_bytes()).unwrap(),
         Err(e) => {
@@ -96,11 +157,23 @@ fn read_stdin() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     Ok(buffer)
 }
 
-fn format(args: &AppArgs, stdin: &str) -> Result<String, BlackdError> {
+fn format(config: &Config, args: &AppArgs, stdin: &str) -> Result<String, BlackdError> {
     let mut req = minreq::post(&args.url)
         .with_header("X-Fast-Or-Safe", "fast")
         .with_header("Content-Type", "text/plain; charset=utf-8")
         .with_body(stdin);
+
+    if let Some(tool) = &config.tool {
+        if let Some(black) = &tool.black {
+            if let Some(target_version) = &black.target_version {
+                req = req.with_header("X-Target-Version", target_version.join(","));
+            }
+
+            if let Some(line_length) = &black.line_length {
+                req = req.with_header("X-Line-Length", line_length.to_string());
+            }
+        }
+    }
 
     if let Some(line_length) = &args.line_length {
         req = req.with_header("X-Line-Length", line_length.to_string());
