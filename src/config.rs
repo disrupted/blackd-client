@@ -5,17 +5,30 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use toml;
 
+/// Represents the configuration loaded from the `pyproject.toml` file.
+///
+/// The struct is created using the `from_file()` or `load()` functions. It has a `tool` field
+/// that contains an optional `ToolConfig` instance.
 #[derive(Debug, Deserialize)]
 pub struct Config {
     #[serde(rename = "tool")]
     pub tool: Option<ToolConfig>,
 }
 
+/// Represents the `tool` configuration section in the `pyproject.toml` file.
+///
+/// The struct is used in the `Config` struct to deserialize the `tool` section. It has an
+/// optional `black` field that contains a `BlackConfig` instance.
 #[derive(Debug, Deserialize)]
 pub struct ToolConfig {
     pub black: Option<BlackConfig>,
 }
 
+/// Represents the `black` configuration section in the `pyproject.toml` file.
+///
+/// The struct is used in the `ToolConfig` struct to deserialize the `black` section. It has
+/// an optional `line_length` field that specifies the maximum line length, and an optional
+/// `target_version` field that specifies the target Python versions.
 #[derive(Debug, Deserialize)]
 pub struct BlackConfig {
     #[serde(rename = "line-length")]
@@ -25,15 +38,23 @@ pub struct BlackConfig {
 }
 
 impl Config {
-    pub fn from_file(path: impl Into<PathBuf>) -> Result<Self, std::io::Error> {
-        let path = path.into();
-        let mut file = File::open(&path)?;
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)?;
-        let config = toml::from_str(&contents).unwrap();
-        Ok(config)
-    }
-
+    /// Loads the configuration from the `pyproject.toml` file.
+    ///
+    /// The function searches for the `pyproject.toml` file in the current directory and its
+    /// parent directories. It returns a `Config` instance or a default instance if the file
+    /// is not found.
+    ///
+    /// # Arguments
+    ///
+    /// * `target_file_name`: An optional `&str` that specifies the target file name. The
+    /// default value is `"pyproject.toml"`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let config = Config::load(None);
+    /// println!("{:?}", config);
+    /// ```
     pub fn load(target_file_name: Option<&str>) -> Self {
         let mut path = env::current_dir().unwrap();
         let target_file_name = target_file_name.unwrap_or("pyproject.toml");
@@ -47,6 +68,30 @@ impl Config {
         }
 
         Config { tool: None }
+    }
+
+    /// Creates a `Config` instance by deserializing the content of the specified file.
+    ///
+    /// The function returns a `Config` instance or an error if deserialization fails.
+    ///
+    /// # Arguments
+    ///
+    /// * `path`: A `PathBuf` instance that specifies the path to the file.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let path = std::path::PathBuf::from("pyproject.toml");
+    /// let config = Config::from_file(path);
+    /// println!("{:?}", config);
+    /// ```
+    pub fn from_file(path: impl Into<PathBuf>) -> Result<Self, std::io::Error> {
+        let path = path.into();
+        let mut file = File::open(&path)?;
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)?;
+        let config = toml::from_str(&contents).unwrap();
+        Ok(config)
     }
 }
 

@@ -9,6 +9,17 @@ use error::BlackdError;
 use io_utils::{read_stdin, write_stdout};
 use minreq;
 
+/// Entry point of the `blackd-client` application.
+///
+/// The function loads the configuration from the `pyproject.toml` file, parses the command-line arguments,
+/// reads the input from stdin, formats it with the Blackd server, and writes the output to stdout.
+///
+/// # Examples
+///
+/// ```text
+/// // Run the `blackd-client` application
+/// $ echo 'print("Hello, world!")' | blackd-client
+/// ```
 fn main() {
     let config = Config::load(None);
     let args = AppArgs::parse();
@@ -24,6 +35,33 @@ fn main() {
     }
 }
 
+/// Formats the input using the Blackd server.
+///
+/// The function sends a POST request to the Blackd server with the input as the body of the request. The
+/// `X-Fast-Or-Safe` and `Content-Type` headers are set, and the `X-Target-Version` and `X-Line-Length`
+/// headers are set if specified in the configuration or the command-line arguments. The function returns
+/// the formatted output as a `String`.
+///
+/// # Arguments
+///
+/// * `config`: A reference to the `Config` instance.
+/// * `args`: A reference to the `AppArgs` instance.
+/// * `stdin`: A reference to the input string.
+///
+/// # Errors
+///
+/// The function returns a `BlackdError` if an error occurs while formatting the input.
+///
+/// # Examples
+///
+/// ```
+/// let config = Config::load(None);
+/// let args = AppArgs::parse();
+/// let stdin = "print('Hello, world!')";
+/// let result = format(&config, &args, stdin);
+///
+/// assert!(result.is_ok());
+/// ```
 fn format(config: &Config, args: &AppArgs, stdin: &str) -> Result<String, BlackdError> {
     let mut req = minreq::post(&args.url)
         .with_header("X-Fast-Or-Safe", "fast")

@@ -1,3 +1,17 @@
+/// A tiny HTTP client for the Black (blackd) Python code formatter.
+///
+/// # Usage
+///
+/// ```
+/// blackd-client [OPTIONS]
+/// ```
+///
+/// # Options
+///
+/// * `-h`, `--help`: Print help information
+/// * `--url <URL>`: URL of blackd server [default: http://localhost:45484]
+/// * `--line-length <LEN>`: Custom max-line-length
+/// * `-V`, `--version`: Print version information
 const HELP: &str = "\
 Tiny HTTP client for the Black (blackd) Python code formatter
 
@@ -13,11 +27,14 @@ OPTIONS:
 
 #[derive(Debug)]
 pub struct AppArgs {
+    /// URL of the Blackd server.
     pub url: String,
+    /// Custom max-line-length.
     pub line_length: Option<i32>,
 }
 
 impl AppArgs {
+    /// Parses the command-line arguments and returns an `AppArgs` instance.
     pub fn parse() -> Self {
         let mut pargs = pico_args::Arguments::from_env();
 
