@@ -1,3 +1,17 @@
+/// A tiny HTTP client for the Black (blackd) Python code formatter.
+///
+/// # Usage
+///
+/// ```
+/// blackd-client [OPTIONS]
+/// ```
+///
+/// # Options
+///
+/// * `-h`, `--help`: Print help information
+/// * `--url <URL>`: URL of blackd server [default: http://localhost:45484]
+/// * `--line-length <LEN>`: Custom max-line-length
+/// * `-V`, `--version`: Print version information
 mod args;
 mod config;
 mod error;

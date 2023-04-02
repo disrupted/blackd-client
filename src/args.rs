@@ -1,17 +1,3 @@
-/// A tiny HTTP client for the Black (blackd) Python code formatter.
-///
-/// # Usage
-///
-/// ```
-/// blackd-client [OPTIONS]
-/// ```
-///
-/// # Options
-///
-/// * `-h`, `--help`: Print help information
-/// * `--url <URL>`: URL of blackd server [default: http://localhost:45484]
-/// * `--line-length <LEN>`: Custom max-line-length
-/// * `-V`, `--version`: Print version information
 const HELP: &str = "\
 Tiny HTTP client for the Black (blackd) Python code formatter
 
@@ -51,7 +37,7 @@ impl AppArgs {
         let url = if let Some(url) = pargs.opt_value_from_str("--url").unwrap() {
             url
         } else {
-            "http://0.0.0.0:45484".to_string()
+            "http://localhost:45484".to_string()
         };
         let args = AppArgs {
             url: url,
