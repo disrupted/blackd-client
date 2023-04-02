@@ -18,7 +18,7 @@ mod error;
 mod io_utils;
 
 use args::AppArgs;
-use config::Config;
+use config::{BlackConfig, Config, ToolConfig};
 use error::BlackdError;
 use io_utils::{read_stdin, write_stdout};
 use minreq;
@@ -144,6 +144,37 @@ mod tests {
     }
 
     #[test]
+    fn test_format_line_length_from_config() {
+        let server = MockServer::start();
+        let body = "print(\"Hello World!\")";
+        let mock = server.mock(|when, then| {
+            when.method("POST")
+                .path("/")
+                .header("X-Fast-Or-Safe", "fast")
+                .header("X-Line-Length", "120");
+            then.status(200).body(body);
+        });
+
+        let config = Config {
+            tool: Some(ToolConfig {
+                black: Some(BlackConfig {
+                    line_length: Some(120),
+                    target_version: None,
+                }),
+            }),
+        };
+        let args = AppArgs {
+            url: server.url(""),
+            line_length: None,
+        };
+        let result = format(&config, &args, "print('Hello World!')");
+
+        mock.assert();
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), body);
+    }
+
+    #[test]
     fn test_format_line_length() {
         let server = MockServer::start();
         let body = "print(\"Hello World!\")";
@@ -159,6 +190,37 @@ mod tests {
         let args = AppArgs {
             url: server.url(""),
             line_length: Some(120),
+        };
+        let result = format(&config, &args, "print('Hello World!')");
+
+        mock.assert();
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), body);
+    }
+
+    #[test]
+    fn test_format_line_length_from_config_overridden_by_args() {
+        let server = MockServer::start();
+        let body = "print(\"Hello World!\")";
+        let mock = server.mock(|when, then| {
+            when.method("POST")
+                .path("/")
+                .header("X-Fast-Or-Safe", "fast")
+                .header("X-Line-Length", "100");
+            then.status(200).body(body);
+        });
+
+        let config = Config {
+            tool: Some(ToolConfig {
+                black: Some(BlackConfig {
+                    line_length: Some(120),
+                    target_version: None,
+                }),
+            }),
+        };
+        let args = AppArgs {
+            url: server.url(""),
+            line_length: Some(100),
         };
         let result = format(&config, &args, "print('Hello World!')");
 
