@@ -18,10 +18,9 @@ mod error;
 mod io_utils;
 
 use args::AppArgs;
-use config::{BlackConfig, Config, ToolConfig};
+use config::Config;
 use error::BlackdError;
 use io_utils::{read_stdin, write_stdout};
-use minreq;
 
 /// Entry point of the `blackd-client` application.
 ///

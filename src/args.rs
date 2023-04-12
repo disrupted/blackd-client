@@ -40,7 +40,7 @@ impl AppArgs {
             "http://localhost:45484".to_string()
         };
         let args = AppArgs {
-            url: url,
+            url,
             line_length: pargs.opt_value_from_str("--line-length").unwrap_or(None),
         };
 

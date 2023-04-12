@@ -3,7 +3,6 @@ use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
-use toml;
 
 /// Represents the configuration loaded from the `pyproject.toml` file.
 ///
@@ -87,7 +86,7 @@ impl Config {
     /// ```
     pub fn from_file(path: impl Into<PathBuf>) -> Result<Self, std::io::Error> {
         let path = path.into();
-        let mut file = File::open(&path)?;
+        let mut file = File::open(path)?;
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
         let config = toml::from_str(&contents).unwrap();
