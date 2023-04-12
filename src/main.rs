@@ -116,6 +116,7 @@ fn format(config: &Config, args: &AppArgs, stdin: &str) -> Result<String, Blackd
 #[cfg(test)]
 mod tests {
     use super::*;
+    use config::{BlackConfig, Config, ToolConfig};
     use httpmock::MockServer;
     use pretty_assertions::assert_eq;
 
