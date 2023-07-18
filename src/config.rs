@@ -58,11 +58,14 @@ impl Config {
         let mut path = env::current_dir().unwrap();
         let target_file_name = target_file_name.unwrap_or("pyproject.toml");
 
-        while path.pop() {
+        loop {
             let potential_config_path = path.join(target_file_name);
             if potential_config_path.is_file() {
                 return Config::from_file(potential_config_path)
                     .expect("Failed to load config file");
+            }
+            if !path.pop() {
+                break;
             }
         }
 
@@ -100,10 +103,18 @@ mod tests {
     use std::env;
     use std::fs::File;
     use std::io::Write;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
 
-    fn create_test_config_file(content: &str, file_name: &str) -> std::io::Result<PathBuf> {
-        let mut file_path = env::temp_dir();
+    fn create_test_config_file(
+        content: &str,
+        file_name: &str,
+        dir: Option<&Path>,
+    ) -> std::io::Result<PathBuf> {
+        let mut file_path = match dir {
+            Some(directory) => directory.to_path_buf(),
+            None => env::temp_dir(),
+        };
+
         file_path.push(file_name);
         let mut file = File::create(&file_path)?;
         file.write_all(content.as_bytes())?;
@@ -123,7 +134,8 @@ mod tests {
         target-version = ['py36', 'py37']
     "#;
 
-        let file_path = create_test_config_file(config_content, "test_from_file.toml").unwrap();
+        let file_path =
+            create_test_config_file(config_content, "test_from_file.toml", None).unwrap();
 
         let config = Config::from_file(&file_path).unwrap();
         let black_config = config.tool.unwrap().black.unwrap();
@@ -142,14 +154,14 @@ mod tests {
         target-version = ['py38', 'py39']
     "#;
 
-        let file_path = create_test_config_file(config_content, "test_load.toml").unwrap();
         let prev_current_dir = env::current_dir().unwrap();
+        let file_path = create_test_config_file(config_content, "test_load.toml", None).unwrap();
 
         let mut parent_dir = file_path.clone();
         parent_dir.pop();
         let _ = env::set_current_dir(&parent_dir);
 
-        let config = Config::load(Some(&file_path.to_str().unwrap()));
+        let config = Config::load(Some("test_load.toml"));
         let black_config = config.tool.unwrap().black.unwrap();
         assert_eq!(black_config.line_length.unwrap(), 100);
         assert_eq!(black_config.target_version.unwrap(), vec!["py38", "py39"]);
@@ -159,9 +171,58 @@ mod tests {
     }
 
     #[test]
+    fn test_load_with_parent_config() {
+        let parent_config_content = r#"
+        [tool]
+        [tool.black]
+        line-length = 120
+        target-version = ['py39']
+    "#;
+
+        let config_content = r#"
+        [tool]
+        [tool.black]
+        line-length = 100
+        target-version = ['py38', 'py39']
+    "#;
+
+        let prev_current_dir = env::current_dir().unwrap();
+
+        let config_dir = env::temp_dir().join("test_load_with_parent_config");
+        let _ = std::fs::create_dir(&config_dir);
+        let config_path = create_test_config_file(
+            config_content,
+            "with_parent_config.toml",
+            Some(config_dir.as_path()),
+        )
+        .unwrap();
+
+        let mut parent_dir = config_dir.clone();
+        parent_dir.pop();
+        let parent_config_path = create_test_config_file(
+            parent_config_content,
+            "with_parent_config.toml",
+            Some(parent_dir.as_path()),
+        )
+        .unwrap();
+
+        let _ = env::set_current_dir(&config_dir);
+        let config = Config::load(Some("with_parent_config.toml"));
+
+        let black_config = config.tool.unwrap().black.unwrap();
+        assert_eq!(black_config.line_length.unwrap(), 100);
+        assert_eq!(black_config.target_version.unwrap(), vec!["py38", "py39"]);
+
+        delete_test_config_file(&config_path);
+        delete_test_config_file(&parent_config_path);
+
+        let _ = env::set_current_dir(prev_current_dir);
+    }
+
+    #[test]
     fn test_empty_config_from_file() {
         let config_content = r#""#;
-        let file_path = create_test_config_file(config_content, "test_empty.toml").unwrap();
+        let file_path = create_test_config_file(config_content, "test_empty.toml", None).unwrap();
 
         let config = Config::from_file(&file_path).unwrap();
         assert!(config.tool.is_none());
@@ -176,7 +237,7 @@ mod tests {
             line-length = 120
         "#;
 
-        let file_path = create_test_config_file(config_content, "test_partial.toml").unwrap();
+        let file_path = create_test_config_file(config_content, "test_partial.toml", None).unwrap();
         let config = Config::from_file(&file_path).unwrap();
 
         assert!(config.tool.is_some());
