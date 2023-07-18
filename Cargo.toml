@@ -14,6 +14,8 @@ description = "Blazing fast Python code formatting using Black"
 custom_error = "1.9.2"
 minreq = "2.3.1"
 pico-args = { version = "0.4.2", default_features = false }
+serde = { version = "1.0.159", features = ["derive"] }
+toml = "0.7.3"
 
 [dev-dependencies]
 httpmock = "0.5.8"

@@ -1,75 +1,44 @@
-use custom_error::custom_error;
-use std::{io, io::prelude::*};
+/// A tiny HTTP client for the Black (blackd) Python code formatter.
+///
+/// # Usage
+///
+/// ```
+/// blackd-client [OPTIONS]
+/// ```
+///
+/// # Options
+///
+/// * `-h`, `--help`: Print help information
+/// * `--url <URL>`: URL of blackd server [default: http://localhost:45484]
+/// * `--line-length <LEN>`: Custom max-line-length
+/// * `-V`, `--version`: Print version information
+mod args;
+mod config;
+mod error;
+mod io_utils;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const DEFAULT_URL: &str = "http://localhost:45484";
+use args::AppArgs;
+use config::Config;
+use error::BlackdError;
+use io_utils::{read_stdin, write_stdout};
 
-const HELP: &str = "\
-Tiny HTTP client for the Black (blackd) Python code formatter
-
-USAGE:
-    blackd-client [OPTIONS]
-
-OPTIONS:
-    -h, --help              Print help information
-        --url <URL>         URL of blackd server [default: http://localhost:45484]
-        --line-length <LEN> Custom max-line-length
-    -V, --version           Print version information
-";
-
-#[derive(Debug)]
-struct AppArgs {
-    url: String,
-    line_length: Option<i32>,
-}
-
-fn parse_args() -> Result<AppArgs, pico_args::Error> {
-    let mut pargs = pico_args::Arguments::from_env();
-
-    if pargs.contains(["-h", "--help"]) {
-        print!("{}", HELP);
-        std::process::exit(0);
-    }
-
-    if pargs.contains(["-V", "--version"]) {
-        println!("blackd-client v{}", VERSION);
-        std::process::exit(0);
-    }
-
-    let args = AppArgs {
-        url: pargs
-            .opt_value_from_str("--url")?
-            .unwrap_or_else(|| DEFAULT_URL.to_string()),
-        line_length: pargs.opt_value_from_str("--line-length")?,
-    };
-
-    let remaining = pargs.finish();
-    if !remaining.is_empty() {
-        eprintln!("Error: unrecognized arguments: {:?}", remaining);
-        std::process::exit(1);
-    }
-
-    Ok(args)
-}
-
-custom_error! {BlackdError
-    Minreq{source: minreq::Error} = "{source}",
-    Syntax{details: String} = "Syntax Error: {details}",
-    Formatting{details: String} = "Formatting Error: {details}",
-    Unknown{status_code: i32, body: String} = "Unknown Error {status_code}: {body}",
-}
-
+/// Entry point of the `blackd-client` application.
+///
+/// The function loads the configuration from the `pyproject.toml` file, parses the command-line arguments,
+/// reads the input from stdin, formats it with the Blackd server, and writes the output to stdout.
+///
+/// # Examples
+///
+/// ```text
+/// // Run the `blackd-client` application
+/// $ echo 'print("Hello, world!")' | blackd-client
+/// ```
 fn main() {
-    let args = match parse_args() {
-        Ok(v) => v,
-        Err(e) => {
-            eprintln!("Error: {}.", e);
-            std::process::exit(1);
-        }
-    };
+    let config = Config::load(None);
+    let args = AppArgs::parse();
 
     let stdin = read_stdin();
-    let result = format(&args, &stdin.unwrap_or_default());
+    let result = format(&config, &args, &stdin.unwrap_or_default());
     match result {
         Ok(v) => write_stdout(v.as_bytes()).unwrap(),
         Err(e) => {
@@ -79,29 +48,52 @@ fn main() {
     }
 }
 
-fn write_stdout(buf: &[u8]) -> io::Result<()> {
-    let stdout = io::stdout();
-    let mut writer = io::BufWriter::new(stdout.lock());
-    writer.write_all(buf)?;
-    Ok(())
-}
-
-fn read_stdin() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let mut buffer = String::new();
-    let stdin = io::stdin();
-    {
-        let mut stdin_lock = stdin.lock();
-        stdin_lock.read_to_string(&mut buffer)?;
-    }
-    Ok(buffer)
-}
-
-fn format(args: &AppArgs, stdin: &str) -> Result<String, BlackdError> {
+/// Formats the input using the Blackd server.
+///
+/// The function sends a POST request to the Blackd server with the input as the body of the request. The
+/// `X-Fast-Or-Safe` and `Content-Type` headers are set, and the `X-Target-Version` and `X-Line-Length`
+/// headers are set if specified in the configuration or the command-line arguments. The function returns
+/// the formatted output as a `String`.
+///
+/// # Arguments
+///
+/// * `config`: A reference to the `Config` instance.
+/// * `args`: A reference to the `AppArgs` instance.
+/// * `stdin`: A reference to the input string.
+///
+/// # Errors
+///
+/// The function returns a `BlackdError` if an error occurs while formatting the input.
+///
+/// # Examples
+///
+/// ```
+/// let config = Config::load(None);
+/// let args = AppArgs::parse();
+/// let stdin = "print('Hello, world!')";
+/// let result = format(&config, &args, stdin);
+///
+/// assert!(result.is_ok());
+/// ```
+fn format(config: &Config, args: &AppArgs, stdin: &str) -> Result<String, BlackdError> {
     let mut req = minreq::post(&args.url)
         .with_header("X-Fast-Or-Safe", "fast")
         .with_header("Content-Type", "text/plain; charset=utf-8")
         .with_body(stdin);
 
+    if let Some(tool) = &config.tool {
+        if let Some(black) = &tool.black {
+            if let Some(target_version) = &black.target_version {
+                req = req.with_header("X-Target-Version", target_version.join(","));
+            }
+
+            if let Some(line_length) = &black.line_length {
+                req = req.with_header("X-Line-Length", line_length.to_string());
+            }
+        }
+    }
+
+    // CLI args override config
     if let Some(line_length) = &args.line_length {
         req = req.with_header("X-Line-Length", line_length.to_string());
     }
@@ -124,6 +116,7 @@ fn format(args: &AppArgs, stdin: &str) -> Result<String, BlackdError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use config::{BlackConfig, Config, ToolConfig};
     use httpmock::MockServer;
     use pretty_assertions::assert_eq;
 
@@ -138,11 +131,43 @@ mod tests {
             then.status(200).body(body);
         });
 
+        let config = Config { tool: None };
         let args = AppArgs {
             url: server.url(""),
             line_length: None,
         };
-        let result = format(&args, "print('Hello World!')");
+        let result = format(&config, &args, "print('Hello World!')");
+
+        mock.assert();
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), body);
+    }
+
+    #[test]
+    fn test_format_line_length_from_config() {
+        let server = MockServer::start();
+        let body = "print(\"Hello World!\")";
+        let mock = server.mock(|when, then| {
+            when.method("POST")
+                .path("/")
+                .header("X-Fast-Or-Safe", "fast")
+                .header("X-Line-Length", "120");
+            then.status(200).body(body);
+        });
+
+        let config = Config {
+            tool: Some(ToolConfig {
+                black: Some(BlackConfig {
+                    line_length: Some(120),
+                    target_version: None,
+                }),
+            }),
+        };
+        let args = AppArgs {
+            url: server.url(""),
+            line_length: None,
+        };
+        let result = format(&config, &args, "print('Hello World!')");
 
         mock.assert();
         assert!(result.is_ok());
@@ -161,11 +186,43 @@ mod tests {
             then.status(200).body(body);
         });
 
+        let config = Config { tool: None };
         let args = AppArgs {
             url: server.url(""),
             line_length: Some(120),
         };
-        let result = format(&args, "print('Hello World!')");
+        let result = format(&config, &args, "print('Hello World!')");
+
+        mock.assert();
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), body);
+    }
+
+    #[test]
+    fn test_format_line_length_from_config_overridden_by_args() {
+        let server = MockServer::start();
+        let body = "print(\"Hello World!\")";
+        let mock = server.mock(|when, then| {
+            when.method("POST")
+                .path("/")
+                .header("X-Fast-Or-Safe", "fast")
+                .header("X-Line-Length", "100");
+            then.status(200).body(body);
+        });
+
+        let config = Config {
+            tool: Some(ToolConfig {
+                black: Some(BlackConfig {
+                    line_length: Some(120),
+                    target_version: None,
+                }),
+            }),
+        };
+        let args = AppArgs {
+            url: server.url(""),
+            line_length: Some(100),
+        };
+        let result = format(&config, &args, "print('Hello World!')");
 
         mock.assert();
         assert!(result.is_ok());
@@ -183,11 +240,12 @@ mod tests {
             then.status(204);
         });
 
+        let config = Config { tool: None };
         let args = AppArgs {
             url: server.url(""),
             line_length: None,
         };
-        let result = format(&args, body);
+        let result = format(&config, &args, body);
 
         mock.assert();
         assert!(result.is_ok());
@@ -203,11 +261,12 @@ mod tests {
                 .body("Cannot parse: 1:6: print('bad syntax'))");
         });
 
+        let config = Config { tool: None };
         let args = AppArgs {
             url: server.url(""),
             line_length: None,
         };
-        let result = format(&args, "print('bad syntax'))");
+        let result = format(&config, &args, "print('bad syntax'))");
 
         mock.assert();
         assert!(result.is_err());
@@ -226,11 +285,12 @@ mod tests {
                 .body("('EOF in multi-line statement', (2, 0))");
         });
 
+        let config = Config { tool: None };
         let args = AppArgs {
             url: server.url(""),
             line_length: None,
         };
-        let result = format(&args, "print(('bad syntax')");
+        let result = format(&config, &args, "print(('bad syntax')");
 
         mock.assert();
         assert!(result.is_err());
@@ -248,11 +308,12 @@ mod tests {
             then.status(418).body("message");
         });
 
+        let config = Config { tool: None };
         let args = AppArgs {
             url: server.url(""),
             line_length: None,
         };
-        let result = format(&args, "");
+        let result = format(&config, &args, "");
 
         mock.assert();
         assert!(result.is_err());

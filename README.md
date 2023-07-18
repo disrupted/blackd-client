@@ -85,3 +85,36 @@ There are two options to choose from:
 1. [null-ls](https://github.com/disrupted/dotfiles/blob/1f5d36a195a41b602ca68d7629360e54654e3db2/.config/nvim/lua/plugins/lsp.lua#L33) (what I use)
 
 2. [EFM](https://github.com/disrupted/dotfiles/blob/253dc440ed954a4289a72dad885c71c16d0f90a4/.config/nvim/lua/efm/blackd.lua)
+
+## Doom Emacs
+
+Doom Emacs uses [format-all](https://docs.doomemacs.org/v21.12/#/description/packages) package and one way to override the default formatter is to use [set-formatter](https://docs.doomemacs.org/v21.12/#/configuration/defining-your-own-formatters) function.
+
+
+``` emacs-lisp
+;;;###autoload
+(defun check-process-running-p (process-name)
+  "Check if the specified PROCESS-NAME is running.
+Returns `t` if the process is running, and `nil` otherwise."
+  (ignore-errors
+    (let ((output (string-trim-right (shell-command-to-string (format "ps aux | grep %s | grep -v grep" process-name)))))
+      (not (string-empty-p output)))))
+
+
+;;;###autoload
+(defun set-python-formatter-to-blackd ()
+  "Set the formatter for Python code to 'blackd' if available.
+If 'blackd' is running, set the formatter to 'blackd-client' and
+enable Python formatting on save for the 'python-mode'. If 'blackd'
+is not running, disable Python formatting on save."
+  (if (and (executable-find "blackd-client")
+           (check-process-running-p "blackd"))
+      (progn
+        (set-formatter! 'black "blackd-client" :modes '(python-mode))
+        (setq +format-on-save-enabled-modes
+              '(python-mode)))
+    (setq +format-on-save-enabled-modes
+          nil)))
+
+(add-hook! 'python-mode-hook #'set-python-formatter-to-blackd)
+```
